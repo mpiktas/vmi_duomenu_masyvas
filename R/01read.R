@@ -19,22 +19,21 @@ ldtm <- dt[ c("ID",setdiff(colnames(dt),idcols))] %>% pivot_longer(-ID, "type")
 
 tp <- ldtm$type %>% unique
 
-ltp <- tp %>% strsplit("." , fixed = TRUE)
 
 ltp <- tp %>% strsplit("." , fixed = TRUE) %>% lapply(function(x)gsub("([0-9]+)(.*)","\\1",x))
 
-cfun <- function(x) {
+parse_name <- function(x) {
     nn <- na.omit(as.integer(x))
     nm <- paste(x[attributes(nn)$na.action], collapse = "_")
     mm <- paste(paste(x[-attributes(nn)$na.action], collapse = "-"),"01", sep = "-")
     data.frame(variable = nm, month = mm)
 }
 
-dspl <- ltp %>% lapply(cfun) %>% bind_rows
+nice_names <- ltp %>% lapply(parse_name) %>% bind_rows
 
-dspl <- cbind(data.frame(type = tp, stringsAsFactors = FALSE), dspl)
+nice_names <- cbind(data.frame(type = tp, stringsAsFactors = FALSE), nice_names)
 
-ldtm <- ldtm %>% inner_join(dspl)
+ldtm <- ldtm %>% inner_join(nice_names)
 
 mokd <- ldtm %>% select(-type) %>% pivot_wider(c("ID","month"), "variable")
 
@@ -42,5 +41,4 @@ mokd %>% write.csv("DATA/monthly.csv", row.names = FALSE)
 dtid %>% write.csv("DATA/idyearly.csv", row.names  = FALSE)
 
 
-#mokd %>% mutate(year = year(ymd(month))) %>%select(-month) %>% group_by(ID,year) %>% summarise_all(sum())
 
